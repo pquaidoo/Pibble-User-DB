@@ -14,6 +14,7 @@ import 'dotenv/config';
 
 import { createApp } from '@/app';
 import { config } from '@utilities/envConfig';
+import { connectToDatabase, disconnectFromDatabase } from '@utilities/database';
 
 const PORT = config.PORT || 8000;
 
@@ -26,6 +27,9 @@ const PORT = config.PORT || 8000;
  */
 const startServer = async (): Promise<void> => {
     try {
+        // Initialize database connection
+        await connectToDatabase();
+
         const app = createApp();
 
         const server = app.listen(PORT, () => {
@@ -36,14 +40,17 @@ const startServer = async (): Promise<void> => {
         });
 
         // Graceful shutdown handling for production environments
-        const gracefulShutdown = (signal: string) => {
+        const gracefulShutdown = async (signal: string) => {
             console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
 
-            server.close((err) => {
+            server.close(async (err) => {
                 if (err) {
                     console.error('❌ Error during server shutdown:', err);
                     process.exit(1);
                 }
+
+                // Close database connections
+                await disconnectFromDatabase();
 
                 console.log('✅ Server closed successfully');
                 console.log('👋 Goodbye!');

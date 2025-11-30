@@ -18,3 +18,5 @@
 // Barrel exports for centralized types
 export * from './apiTypes';
 export * from './errorTypes';
+export * from './requestTypes';
+export * from './databaseTypes';

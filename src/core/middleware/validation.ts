@@ -10,6 +10,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
 import { ErrorResponse, ErrorCodes, ValidationError } from '@/types';
+import { validateMediaType, validateMediaId, validateAvatarId } from '@utilities/validationUtils';
 
 /**
  * Process validation results and send standardized error responses
@@ -181,6 +182,175 @@ export const validateQueryParams = (
             response.status(400).json(errorResponse);
             return;
         }
+    }
+
+    next();
+};
+
+/**
+ * Validate :userid path parameter
+ *
+ * Ensures userid is a valid positive integer.
+ *
+ * @example
+ * ```typescript
+ * router.get('/:userid/watchlist', validateUserIdParam, getWatchlist);
+ * ```
+ */
+export const validateUserIdParam = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    const userId = parseInt(req.params.userid || '', 10);
+
+    if (isNaN(userId) || userId <= 0 || !Number.isInteger(userId)) {
+        res.status(400).json({
+            error: 'Invalid user_id. Must be a positive integer.',
+            code: 'INVALID_USER_ID',
+            timestamp: new Date().toISOString()
+        });
+        return;
+    }
+
+    next();
+};
+
+/**
+ * Validate :mediaid path parameter
+ *
+ * Ensures mediaid is a non-empty string.
+ *
+ * @example
+ * ```typescript
+ * router.delete('/:userid/watchlist/:mediaid', validateMediaIdParam, deleteItem);
+ * ```
+ */
+export const validateMediaIdParam = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    const mediaId = req.params.mediaid;
+
+    if (!mediaId || typeof mediaId !== 'string' || mediaId.trim().length === 0) {
+        res.status(400).json({
+            error: 'Invalid media_id. Must be a non-empty string.',
+            code: 'INVALID_MEDIA_ID',
+            timestamp: new Date().toISOString()
+        });
+        return;
+    }
+
+    next();
+};
+
+/**
+ * Validate media item request body (POST requests)
+ *
+ * Validates that request body contains valid media_type and media_id.
+ *
+ * @example
+ * ```typescript
+ * router.post('/:userid/watchlist', validateMediaItemBody, addToWatchlist);
+ * ```
+ */
+export const validateMediaItemBody = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    try {
+        if (!req.body || typeof req.body !== 'object') {
+            throw new Error('Request body must be a JSON object');
+        }
+
+        const { media_type, media_id } = req.body;
+
+        // Validate using utility functions (will throw on error)
+        validateMediaType(media_type);
+        validateMediaId(media_id);
+
+        next();
+    } catch (error: any) {
+        res.status(400).json({
+            error: error.message,
+            code: 'INVALID_REQUEST_BODY',
+            timestamp: new Date().toISOString()
+        });
+    }
+};
+
+/**
+ * Validate avatar update request body (PATCH requests)
+ *
+ * Validates that request body contains a valid avatar_id.
+ *
+ * @example
+ * ```typescript
+ * router.patch('/:userid/avatar', validateAvatarBody, updateAvatar);
+ * ```
+ */
+export const validateAvatarBody = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    try {
+        if (!req.body || typeof req.body !== 'object') {
+            throw new Error('Request body must be a JSON object');
+        }
+
+        const { avatar_id } = req.body;
+
+        // Validate using utility function (will throw on error)
+        validateAvatarId(avatar_id);
+
+        next();
+    } catch (error: any) {
+        res.status(400).json({
+            error: error.message,
+            code: 'INVALID_REQUEST_BODY',
+            timestamp: new Date().toISOString()
+        });
+    }
+};
+
+/**
+ * Validate list filter query parameters
+ *
+ * Validates optional ?type=movie&sort=desc query parameters.
+ *
+ * @example
+ * ```typescript
+ * router.get('/:userid/watchlist', validateListQueryParams, getWatchlist);
+ * ```
+ */
+export const validateListQueryParams = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    const { type, sort } = req.query;
+
+    // Validate type if provided
+    if (type && !['movie', 'tvshow'].includes(type as string)) {
+        res.status(400).json({
+            error: "Invalid type parameter. Must be 'movie' or 'tvshow'.",
+            code: 'INVALID_QUERY_PARAM',
+            timestamp: new Date().toISOString()
+        });
+        return;
+    }
+
+    // Validate sort if provided
+    if (sort && !['asc', 'desc'].includes(sort as string)) {
+        res.status(400).json({
+            error: "Invalid sort parameter. Must be 'asc' or 'desc'.",
+            code: 'INVALID_QUERY_PARAM',
+            timestamp: new Date().toISOString()
+        });
+        return;
     }
 
     next();

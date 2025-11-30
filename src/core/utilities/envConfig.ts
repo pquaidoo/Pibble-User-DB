@@ -9,6 +9,43 @@
  */
 
 /**
+ * Get environment variable with optional default value and error handling
+ * Provides safe access to environment variables with fallback and validation
+ * Throws descriptive error if required variable is missing
+ *
+ * @param key - Environment variable name to retrieve
+ * @param defaultValue - Optional fallback value if variable is not set
+ * @returns Environment variable value or default value
+ * @throws Error if variable is not set and no default is provided
+ * @example
+ * // Required variable (will throw if not set)
+ * const dbHost = getEnvVar('DB_HOST');
+ * @example
+ * // Optional variable with default
+ * const port = getEnvVar('PORT', '3000');
+ * const environment = getEnvVar('NODE_ENV', 'development');
+ * @example
+ * // Usage in configuration
+ * const databaseConfig = {
+ *   host: getEnvVar('DB_HOST'),           // Required
+ *   port: getEnvVar('DB_PORT', '5432'),  // Optional with default
+ *   database: getEnvVar('DB_NAME')       // Required
+ * };
+ */
+export const getEnvVar = (key: string, defaultValue?: string): string => {
+    const value = process.env[key];
+
+    if (value !== undefined) {
+        return value;
+    }
+
+    if (defaultValue !== undefined) {
+        return defaultValue;
+    }
+
+    throw new Error(`Environment variable ${key} is required but not set`);
+};
+/**
  * Application configuration interface
  *
  * Type-safe configuration object that defines all available environment
@@ -102,7 +139,51 @@ const validateConfig = (config: Config): void => {
         process.exit(1);
     }
 };
+/**
+ * Validate that all required environment variables are present and accessible
+ * Performs startup validation to ensure application has all necessary configuration
+ * Should be called early in application lifecycle before attempting to use variables
+ *
+ * @returns void (throws error if validation fails)
+ * @throws Error with list of missing variables if any are not set
+ * @example
+ * // Called during application startup
+ * try {
+ *   validateEnv();
+ *   console.log('✅ Environment variables validated successfully');
+ * } catch (error) {
+ *   console.error('❌ Environment validation failed:', error.message);
+ *   process.exit(1);
+ * }
+ * @example
+ * // In a startup sequence
+ * async function startApplication() {
+ *   validateEnv();                    // Validate config first
+ *   await connectToDatabase();        // Then connect to services
+ *   startHttpServer();               // Finally start accepting requests
+ * }
+ */
+export const validateEnv = (): void => {
+    const requiredVars = [
+        'DB_HOST',
+        'DB_PORT',
+        'DB_USER',
+        'DB_PASSWORD',
+        'DB_NAME'
+    ];
+    const missing = requiredVars.filter(varName => {
+        try {
+            getEnvVar(varName);
+            return false;
+        } catch {
+            return true;
+        }
+    });
 
+    if (missing.length > 0) {
+        throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
+};
 // Parse and validate configuration on module load
 export const config = parseConfig();
 validateConfig(config);

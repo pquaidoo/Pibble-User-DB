@@ -7,7 +7,7 @@
  * @see {@link ../../../docs/api-design-patterns.md#validation-patterns} for validation strategies
  */
 
-import { ValidationError, ErrorCodes } from '@/types';
+import { ValidationError, ErrorCodes, MediaType } from '@/types';
 
 /**
  * Validation result interface for consistent validation responses
@@ -214,3 +214,86 @@ export const ValidationRules = {
         return null;
     }
 };
+
+/**
+ * Validate media_type enum
+ *
+ * Ensures the media_type is either 'movie' or 'tvshow'.
+ *
+ * @param mediaType The value to validate
+ * @returns The validated media type
+ * @throws Error if invalid
+ *
+ * @example
+ * ```typescript
+ * const mediaType = validateMediaType(req.body.media_type);
+ * // mediaType is now typed as 'movie' | 'tvshow'
+ * ```
+ */
+export function validateMediaType(mediaType: unknown): MediaType {
+    const validTypes: MediaType[] = ['movie', 'tvshow'];
+
+    if (typeof mediaType !== 'string') {
+        throw new Error(
+            `media_type must be a string. Received: ${typeof mediaType}`
+        );
+    }
+
+    if (!validTypes.includes(mediaType as MediaType)) {
+        throw new Error(
+            `Invalid media_type. Must be 'movie' or 'tvshow'. Received: '${mediaType}'`
+        );
+    }
+
+    return mediaType as MediaType;
+}
+
+/**
+ * Validate media_id format
+ *
+ * Ensures the media_id is a non-empty string.
+ *
+ * @param mediaId The value to validate
+ * @returns The validated media ID
+ * @throws Error if invalid
+ */
+export function validateMediaId(mediaId: unknown): string {
+    if (typeof mediaId !== 'string') {
+        throw new Error(
+            `media_id must be a string. Received: ${typeof mediaId}`
+        );
+    }
+
+    if (mediaId.trim().length === 0) {
+        throw new Error('media_id cannot be empty');
+    }
+
+    return mediaId.trim();
+}
+
+/**
+ * Validate avatar ID
+ *
+ * Ensures the avatar ID is a valid positive integer.
+ *
+ * @param avatarId The value to validate
+ * @returns The validated avatar ID as a number
+ * @throws Error if invalid
+ */
+export function validateAvatarId(avatarId: unknown): number {
+    const parsed = typeof avatarId === 'string' ? parseInt(avatarId, 10) : avatarId;
+
+    if (typeof parsed !== 'number' || isNaN(parsed)) {
+        throw new Error(
+            `avatar_id must be a valid number. Received: ${avatarId}`
+        );
+    }
+
+    if (parsed <= 0 || !Number.isInteger(parsed)) {
+        throw new Error(
+            `avatar_id must be a positive integer. Received: ${parsed}`
+        );
+    }
+
+    return parsed;
+}

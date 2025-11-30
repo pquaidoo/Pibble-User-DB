@@ -43,7 +43,9 @@
       "@controllers/*": ["controllers/*"],
       "@middleware/*": ["core/middleware/*"],
       "@utilities/*": ["core/utilities/*"],
-      "@routes/*": ["routes/*"]
+      "@utilities": ["core/utilities"],
+      "@routes/*": ["routes/*"],
+      "@db": ["core/utilities/database"]
     },
 
     /* Advanced Options */
@@ -58,7 +60,9 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/routes/open/helloRoutes.ts",
+    "src/routes/open/parametersRoutes.ts"
   ],
   "ts-node": {
     "require": ["tsconfig-paths/register"]

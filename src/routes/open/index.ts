@@ -1,8 +1,8 @@
 /**
  * Open routes barrel exports
  *
- * Aggregates all publicly accessible routes that don't require authentication.
- * Provides clean organization for routes that are available to all clients.
+ * Aggregates all publicly accessible routes.
+ * Note: Most routes require authentication, but are organized here for clarity.
  *
  * @see {@link ../../../docs/node-express-architecture.md#routing-patterns} for routing organization
  */
@@ -10,8 +10,10 @@
 // Health monitoring routes
 export * from './healthRoutes';
 
-// Hello World demonstration routes
-export * from './helloRoutes';
+// User media routes
+export * from './watchlistRoutes';
+export * from './favoritesRoutes';
+export * from './watchedRoutes';
 
-// Parameters demonstration routes
-export * from './parametersRoutes';
+// Avatar routes
+export * from './avatarRoutes';

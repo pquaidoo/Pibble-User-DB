@@ -8,7 +8,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { ErrorResponse, ErrorCodes } from '@/types';
+import { ErrorResponse, ErrorCodes, AuthenticatedRequest } from '@/types';
 import { config } from '@utilities/envConfig';
 
 /**
@@ -151,6 +151,31 @@ export const asyncHandler = (
 ) => {
     return (request: Request, response: Response, next: NextFunction): void => {
         Promise.resolve(handler(request, response, next)).catch(next);
+    };
+};
+
+/**
+ * Async error wrapper for authenticated route handlers
+ *
+ * Type-safe version of asyncHandler for routes that require authentication.
+ * Wraps async route handlers that use AuthenticatedRequest to automatically
+ * catch and forward errors to the global error handler.
+ *
+ * @example
+ * ```typescript
+ * export const getWatchlist = authenticatedAsyncHandler(
+ *   async (request: AuthenticatedRequest, response: Response): Promise<void> => {
+ *     const userId = request.user.id; // Type-safe access
+ *     // ...
+ *   }
+ * );
+ * ```
+ */
+export const authenticatedAsyncHandler = (
+    handler: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<any>
+) => {
+    return (request: Request, response: Response, next: NextFunction): void => {
+        Promise.resolve(handler(request as AuthenticatedRequest, response, next)).catch(next);
     };
 };
 

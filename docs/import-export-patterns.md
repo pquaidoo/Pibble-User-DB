@@ -170,7 +170,7 @@ Export type definitions for type safety across your application.
 
 **Interfaces:**
 ```typescript
-// types/user.ts
+// types/userRoutes.ts
 export interface User {
     id: string;
     name: string;
