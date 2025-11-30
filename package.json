@@ -20,8 +20,7 @@
     "test:verbose": "jest --verbose",
     "dev": "npm run start:dev",
     "docs:generate": "ts-node -r tsconfig-paths/register scripts/generateOpenApiSpec.ts",
-    "docs:serve": "npm run dev",
-    "postinstall": "npm run build"
+    "docs:serve": "npm run dev"
   },
   "keywords": [
     "typescript",
