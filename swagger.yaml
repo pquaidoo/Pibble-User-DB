@@ -1,0 +1,533 @@
+openapi: 3.0.3
+info:
+  title: Media Tracking API
+  description: API for managing user watchlists, favorites, watched content, and profile avatars
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Watchlist
+    description: Operations related to user watchlists
+  - name: Favorites
+    description: Operations related to user favorites
+  - name: Watched
+    description: Operations related to watched content
+  - name: Avatar
+    description: Operations related to user profile avatars
+
+paths:
+  /{userid}/watchlist:
+    get:
+      tags:
+        - Watchlist
+      summary: Get all watchlist items for a user
+      description: Retrieves all movies and TV shows in the user's watchlist
+      operationId: getUserWatchlist
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Successfully retrieved watchlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Watchlist
+      summary: Add item to watchlist
+      description: Adds a new movie or TV show to the user's watchlist
+      operationId: addToWatchlist
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaItemInput'
+      responses:
+        '201':
+          description: Item successfully added to watchlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Watchlist
+      summary: Delete all watchlist items
+      description: Removes all items from the user's watchlist
+      operationId: deleteAllWatchlist
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '204':
+          description: All watchlist items successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/watchlist/{mediaid}:
+    delete:
+      tags:
+        - Watchlist
+      summary: Delete single watchlist item
+      description: Removes a specific item from the user's watchlist
+      operationId: deleteWatchlistItem
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/MediaIdParam'
+      responses:
+        '204':
+          description: Watchlist item successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/favorites:
+    get:
+      tags:
+        - Favorites
+      summary: Get all favorites for a user
+      description: Retrieves all movies and TV shows in the user's favorites
+      operationId: getUserFavorites
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Successfully retrieved favorites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Favorites
+      summary: Add item to favorites
+      description: Adds a new movie or TV show to the user's favorites
+      operationId: addToFavorites
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaItemInput'
+      responses:
+        '201':
+          description: Item successfully added to favorites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Favorites
+      summary: Delete all favorites
+      description: Removes all items from the user's favorites
+      operationId: deleteAllFavorites
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '204':
+          description: All favorites successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/favorites/{mediaid}:
+    delete:
+      tags:
+        - Favorites
+      summary: Delete single favorite item
+      description: Removes a specific item from the user's favorites
+      operationId: deleteFavoriteItem
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/MediaIdParam'
+      responses:
+        '204':
+          description: Favorite item successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/watched:
+    get:
+      tags:
+        - Watched
+      summary: Get all watched items for a user
+      description: Retrieves all movies and TV shows the user has watched
+      operationId: getUserWatched
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Successfully retrieved watched items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Watched
+      summary: Add item to watched history
+      description: Adds a new movie or TV show to the user's watched history
+      operationId: addToWatched
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaItemInput'
+      responses:
+        '201':
+          description: Item successfully added to watched history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Watched
+      summary: Delete all watched items
+      description: Removes all items from the user's watched history
+      operationId: deleteAllWatched
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '204':
+          description: All watched items successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/watched/{mediaid}:
+    delete:
+      tags:
+        - Watched
+      summary: Delete single watched item
+      description: Removes a specific item from the user's watched history
+      operationId: deleteWatchedItem
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - $ref: '#/components/parameters/MediaIdParam'
+      responses:
+        '204':
+          description: Watched item successfully deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /avatar/all:
+    get:
+      tags:
+        - Avatar
+      summary: Get all available avatars
+      description: Retrieves all profile picture options available for users
+      operationId: getAllAvatars
+      responses:
+        '200':
+          description: Successfully retrieved all avatars
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Avatar'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{userid}/avatar:
+    get:
+      tags:
+        - Avatar
+      summary: Get user's current avatar
+      description: Retrieves the profile picture assigned to the user
+      operationId: getUserAvatar
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Successfully retrieved user's avatar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Avatar'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Avatar
+      summary: Update user's avatar
+      description: Changes the profile picture assigned to the user
+      operationId: updateUserAvatar
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvatarUpdate'
+      responses:
+        '200':
+          description: Avatar successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Avatar'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    UserIdParam:
+      name: userid
+      in: path
+      description: Unique identifier for the user
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 456
+
+    MediaIdParam:
+      name: mediaid
+      in: path
+      description: Unique identifier for the media item
+      required: true
+      schema:
+        type: string
+        example: tt9876543
+
+  schemas:
+    MediaItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID of the record
+          example: 93e5db8c-78d2-4153-845d-0a4a373b...
+        source_text:
+          type: string
+          description: Source category (watchlist, favorites, watched)
+          enum:
+            - watchlist
+            - favorites
+            - watched
+          example: watchlist
+        user_id:
+          type: integer
+          format: int64
+          description: ID of the user who owns this entry
+          example: 456
+        media_type:
+          type: string
+          description: Type of media content
+          enum:
+            - movie
+            - tvshow
+          example: movie
+        media_id:
+          type: string
+          description: ID of the movie or TV show
+          example: tt9876543
+        added_at:
+          type: string
+          format: date-time
+          description: Timestamp when the item was added
+          example: '2025-11-26T21:07:08.130009Z'
+      required:
+        - id
+        - source_text
+        - user_id
+        - media_type
+        - media_id
+        - added_at
+
+    MediaItemInput:
+      type: object
+      properties:
+        media_type:
+          type: string
+          description: Type of media content
+          enum:
+            - movie
+            - tvshow
+          example: movie
+        media_id:
+          type: string
+          description: ID of the movie or TV show from the database
+          example: tt9876543
+      required:
+        - media_type
+        - media_id
+
+    Avatar:
+      type: object
+      properties:
+        avatar_id:
+          type: integer
+          format: int64
+          description: Unique identifier for the avatar
+          example: 1
+        avatar_url:
+          type: string
+          format: uri
+          description: URL or path to the avatar image
+          example: /avatars/avatar1.png
+        avatar_name:
+          type: string
+          description: Descriptive name for the avatar
+          example: Default Avatar
+      required:
+        - avatar_id
+        - avatar_url
+
+    AvatarUpdate:
+      type: object
+      properties:
+        avatar_id:
+          type: integer
+          format: int64
+          description: ID of the avatar to assign to the user
+          example: 3
+      required:
+        - avatar_id
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Resource not found
+        code:
+          type: string
+          description: Error code
+          example: NOT_FOUND
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: '2025-11-26T21:07:08.130009Z'
+      required:
+        - error
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Invalid media_type. Must be 'movie' or 'tvshow'
+            code: BAD_REQUEST
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: User or resource not found
+            code: NOT_FOUND
+
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Item already exists in watchlist
+            code: CONFLICT
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: An unexpected error occurred
+            code: INTERNAL_SERVER_ERROR
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token-based authentication
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key authentication
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
