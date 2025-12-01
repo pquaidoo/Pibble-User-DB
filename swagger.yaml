@@ -7,7 +7,7 @@ info:
     name: API Support
 
 servers:
-  - url: https://api.example.com
+  - url: https://pibble-user-db.onrender.com/
     description: Production server
   - url: http://localhost:3000
     description: Development server
