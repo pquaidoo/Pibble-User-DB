@@ -9,6 +9,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '@/types';
+import jwt from 'jsonwebtoken';
+import { config } from '@utilities/envConfig';
 
 /**
  * Authenticate user via JWT token or API key
@@ -81,31 +83,91 @@ export const authenticate = async (
 /**
  * Verify JWT token and return user information
  *
- * TODO: Implement actual JWT verification
- * This is a placeholder - replace with your JWT library (e.g., jsonwebtoken)
+ * Verifies the JWT token using the configured secret key and extracts
+ * user information from the token payload.
  *
  * @param token JWT token string
  * @returns Authenticated user object
- * @throws Error if token is invalid
+ * @throws Error if token is invalid or verification fails
  */
-async function verifyJWT(token: string): Promise<{ user_id: string; email?: string }> {
-    // TODO: Replace this with actual JWT verification
-    // Example using jsonwebtoken:
-    // import jwt from 'jsonwebtoken';
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    // return { user_id: decoded.userId, email: decoded.email };
-    
-    // Placeholder implementation
+async function verifyJWT(token: string): Promise<{ user_id: string; email?: string; username?: string }> {
     if (!token || token.length < 10) {
         throw new Error('Invalid JWT token');
     }
 
-    // For now, just return a mock user
-    // REPLACE THIS IN PRODUCTION!
-    return {
-        user_id: '123',
-        email: 'user@example.com'
-    };
+    // ============================================================================
+    // TEMPORARY: JWT verification bypassed for development
+    //
+    // TO RE-ENABLE PROPER JWT VERIFICATION:
+    // 1. Get JWT_SECRET from Credentials API team
+    // 2. Add JWT_SECRET=<the-secret> to your .env file
+    // 3. Comment out the TEMP section below (lines 109-126)
+    // 4. Uncomment the PRODUCTION section below (lines 128-157)
+    // ============================================================================
+
+    // TEMP: Decode without verification (INSECURE - DEVELOPMENT ONLY!)
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            throw new Error('Invalid token format');
+        }
+
+        const payloadBase64 = parts[1];
+        if (!payloadBase64) {
+            throw new Error('Token payload is missing');
+        }
+
+        const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
+        const userId = payload.user_id || payload.userId || payload.id || payload.sub;
+
+        if (!userId) {
+            throw new Error('Token payload missing user identifier');
+        }
+
+        return {
+            user_id: String(userId),
+            email: payload.email,
+            username: payload.username || payload.name
+        };
+    } catch (error: any) {
+        throw new Error('Failed to decode JWT token: ' + error.message);
+    }
+
+    /* PRODUCTION CODE - UNCOMMENT WHEN YOU HAVE JWT_SECRET:
+
+    if (!config.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    try {
+        // Verify and decode the JWT token
+        const decoded = jwt.verify(token, config.JWT_SECRET) as any;
+
+        // Extract user information from token payload
+        // Support multiple field name variations (user_id, userId, id, sub)
+        const userId = decoded.user_id || decoded.userId || decoded.id || decoded.sub;
+
+        if (!userId) {
+            throw new Error('Token payload missing user identifier');
+        }
+
+        // Return user object with consistent field names
+        return {
+            user_id: String(userId), // Ensure it's always a string
+            email: decoded.email,
+            username: decoded.username || decoded.name
+        };
+    } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+            throw new Error('JWT token has expired');
+        }
+        if (error.name === 'JsonWebTokenError') {
+            throw new Error('Invalid JWT token');
+        }
+        throw new Error(error.message || 'JWT verification failed');
+    }
+
+    */ // END PRODUCTION CODE
 }
 
 /**

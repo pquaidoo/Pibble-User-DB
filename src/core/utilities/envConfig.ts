@@ -64,6 +64,8 @@ interface Config {
     ENABLE_LOGGING: boolean;
     /** API version identifier */
     API_VERSION: string;
+    /** JWT secret key for token verification */
+    JWT_SECRET: string;
 }
 
 /**
@@ -102,7 +104,8 @@ const parseConfig = (): Config => {
         CORS_ORIGINS: parseArray(process.env.CORS_ORIGINS, ['http://localhost:3000', 'http://localhost:8000']),
         BODY_LIMIT: process.env.BODY_LIMIT || '10mb',
         ENABLE_LOGGING: parseBoolean(process.env.ENABLE_LOGGING, true),
-        API_VERSION: process.env.API_VERSION || '1.0.0'
+        API_VERSION: process.env.API_VERSION || '1.0.0',
+        JWT_SECRET: process.env.JWT_SECRET || ''
     };
 };
 
@@ -132,6 +135,11 @@ const validateConfig = (config: Config): void => {
             errors.push(`Invalid CORS origin format: ${origin}. Must be a valid URL or '*'`);
         }
     });
+
+    // Validate JWT_SECRET is set in production
+    if (config.NODE_ENV === 'production' && !config.JWT_SECRET) {
+        errors.push('JWT_SECRET is required in production environment');
+    }
 
     if (errors.length > 0) {
         console.error('❌ Configuration validation failed:');

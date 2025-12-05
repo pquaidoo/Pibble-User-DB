@@ -31,7 +31,20 @@ export const requireOwnUser: RequestHandler = (
     const AuthenticatedReq = request as AuthenticatedRequest;
     const { userid } = AuthenticatedReq.params;
 
+    // Ensure user is authenticated
+    if (!AuthenticatedReq.user || !AuthenticatedReq.user.user_id) {
+        const error = new AppError(
+            'Authentication required',
+            401,
+            ErrorCodes.UNAUTHORIZED
+        );
+        next(error);
+        return;
+    }
+
     // Verify authenticated user matches the requested userid
+    // Both values are strings: user_id from JWT (converted to string in auth middleware)
+    // and userid from URL params (always a string)
     if (AuthenticatedReq.user.user_id !== userid) {
         const error = new AppError(
             'You do not have permission to access this resource',
