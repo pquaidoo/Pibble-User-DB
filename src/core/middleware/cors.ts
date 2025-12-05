@@ -44,7 +44,8 @@ export const corsMiddleware = cors({
         'Accept',
         'Authorization',
         'Cache-Control',
-        'X-API-Version'
+        'X-API-Version',
+        'X-API-Key'
     ],
 
     // Headers exposed to the client
