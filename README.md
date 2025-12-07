@@ -277,9 +277,15 @@ This project includes comprehensive educational documentation to help you unders
 | [http://localhost:8000/docs](http://localhost:8000/docs) | **Documentation Viewer** - Browse and read all educational guides in rendered markdown |
 | [http://localhost:8000/](http://localhost:8000/) | **API Discovery** - JSON response listing all available endpoints |
 
-### Educational Guides (13 Documents)
+### Educational Guides
 
 All guides are located in the `docs/` directory and cover everything from HTTP basics to advanced patterns.
+
+#### **🔐 Authentication & Security**
+
+- **[JWT Authentication Guide](docs/JWT_AUTHENTICATION.md)** - Complete guide to JWT token verification, testing, and security best practices
+- **[Avatar System Guide](docs/AVATAR_GUIDE.md)** - Detailed documentation for user avatar management
+- **[Avatar Quick Start](docs/AVATAR_QUICKSTART.md)** - Quick reference with copy-paste examples
 
 #### **HTTP Foundations** (5 documents)
 

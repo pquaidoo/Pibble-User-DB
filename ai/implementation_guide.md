@@ -88,19 +88,39 @@ CREATE TRIGGER update_user_media_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 ```
 
-### Step 4: Seed Avatar Data (Optional but Recommended)
+### Step 4: Seed Avatar Data (Required)
 
-Add some default avatars to choose from:
+Add the 7 predefined avatars (IDs 1-7) that users can choose from:
 
 ```sql
+-- Insert 7 predefined avatars (avatar_id 1 is the default)
 INSERT INTO avatars (avatar_name, avatar_url, is_default) VALUES
-    ('Default Avatar', '/avatars/default.png', TRUE),
-    ('Avatar 1', '/avatars/avatar1.png', FALSE),
-    ('Avatar 2', '/avatars/avatar2.png', FALSE),
-    ('Avatar 3', '/avatars/avatar3.png', FALSE),
-    ('Avatar 4', '/avatars/avatar4.png', FALSE),
-    ('Avatar 5', '/avatars/avatar5.png', FALSE);
+    ('Avatar 0 Smile', '/public/images/avatars/default/avatar0.png', TRUE),  -- ID 1 (default)
+    ('Avatar 1 Bird', '/public/images/avatars/default/avatar1.png', FALSE),   -- ID 2
+    ('Avatar 2 Girl', '/public/images/avatars/default/avatar2.png', FALSE),   -- ID 3
+    ('Avatar 3 Dog', '/public/images/avatars/default/avatar3.png', FALSE),    -- ID 4
+    ('Avatar 4 Rhino', '/public/images/avatars/default/avatar4.png', FALSE),  -- ID 5
+    ('Avatar 5 Sheep', '/public/images/avatars/default/avatar5.png', FALSE),  -- ID 6
+    ('Avatar 6 T-Rex', '/public/images/avatars/default/avatar6.png', FALSE);  -- ID 7
+
+-- Verify avatars were inserted correctly
+SELECT avatar_id, avatar_name, is_default FROM avatars ORDER BY avatar_id;
 ```
+
+**Expected Result:**
+```
+ avatar_id |   avatar_name   | is_default
+-----------+-----------------+------------
+         1 | Avatar 0 Smile  | t
+         2 | Avatar 1 Bird   | f
+         3 | Avatar 2 Girl   | f
+         4 | Avatar 3 Dog    | f
+         5 | Avatar 4 Rhino  | f
+         6 | Avatar 5 Sheep  | f
+         7 | Avatar 6 T-Rex  | f
+```
+
+**Note:** Avatar ID 1 is marked as `is_default = TRUE` and will be automatically assigned to new users who haven't selected an avatar yet.
 
 ### Step 5: Verify Tables Were Created
 
@@ -359,7 +379,25 @@ WHERE user_id = $1
 
 ---
 
+---
+
+## Avatar Endpoints
+
+The avatar system allows users to select from 7 predefined profile pictures (avatar_id 1-7).
+
+### How It Works
+1. **7 Predefined Avatars**: IDs 1-7 stored in `avatars` table
+2. **Avatar #1 is Default**: Automatically assigned to new users
+3. **User Selection**: Users can switch between avatars 1-7 via PATCH endpoint
+4. **One Avatar Per User**: Stored in `user_avatars` table
+
+---
+
 #### 13. GET /avatar/all
+
+**Purpose:** Get all available avatar options (IDs 1-7) to display in avatar picker UI
+
+**Access:** Public (no authentication required)
 
 **NEW QUERY:**
 ```sql
@@ -368,20 +406,36 @@ FROM avatars
 ORDER BY avatar_id;
 ```
 
+**Returns:** Array of 7 avatars
+```json
+[
+  {
+    "avatar_id": 1,
+    "avatar_name": "Avatar 0 Smile",
+    "avatar_url": "/public/images/avatars/default/avatar0.png",
+    "is_default": true
+  },
+  {
+    "avatar_id": 2,
+    "avatar_name": "Avatar 1 Bird",
+    "avatar_url": "/public/images/avatars/default/avatar1.png",
+    "is_default": false
+  },
+  // ... avatars 3-7
+]
+```
+
 ---
 
 #### 14. GET /:userid/avatar
 
-**NEW QUERY:**
-```sql
-SELECT a.avatar_id, a.avatar_name, a.avatar_url
-FROM user_avatars ua
-JOIN avatars a ON ua.avatar_id = a.avatar_id
-WHERE ua.user_id = $1;
-```
+**Purpose:** Get the user's currently selected avatar
 
-**If user hasn't set an avatar yet, return the default:**
+**Access:** Authenticated (user can only access their own avatar)
+
+**NEW QUERY (with default fallback):**
 ```sql
+-- Try to get user's selected avatar, or return default if none selected
 SELECT a.avatar_id, a.avatar_name, a.avatar_url
 FROM user_avatars ua
 JOIN avatars a ON ua.avatar_id = a.avatar_id
@@ -398,26 +452,114 @@ AND NOT EXISTS (
 LIMIT 1;
 ```
 
+**Logic:**
+- If user has selected an avatar → return their selected avatar
+- If user has NOT selected an avatar → return default avatar (avatar_id = 1)
+
+**Returns:** Single avatar object
+```json
+{
+  "avatar_id": 3,
+  "avatar_name": "Avatar 2 Girl",
+  "avatar_url": "/public/images/avatars/default/avatar2.png"
+}
+```
+
 ---
 
 #### 15. PATCH /:userid/avatar
 
-**NEW QUERY:**
+**Purpose:** Update user's avatar selection (choose from avatars 1-7)
+
+**Access:** Authenticated (user can only update their own avatar)
+
+**Rate Limit:** 10 requests per hour (prevents abuse)
+
+**Request Body:**
+```json
+{
+  "avatar_id": 5
+}
+```
+
+**Validation:**
+- `avatar_id` must be a number between 1 and 7
+- `avatar_id` must exist in `avatars` table
+- Returns 400 error if validation fails
+
+**NEW QUERY (Step 1 - Verify avatar exists):**
 ```sql
+-- Verify the requested avatar exists
+SELECT avatar_id FROM avatars WHERE avatar_id = $1;
+-- If no rows returned, return 404 error
+```
+
+**NEW QUERY (Step 2 - Update user's avatar):**
+```sql
+-- Insert new avatar or update existing one
 INSERT INTO user_avatars (user_id, avatar_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id)
-DO UPDATE SET 
+DO UPDATE SET
     avatar_id = EXCLUDED.avatar_id,
     updated_at = NOW()
 RETURNING avatar_id;
 ```
 
-Then fetch the full avatar details:
+**NEW QUERY (Step 3 - Return full avatar details):**
 ```sql
+-- Fetch complete avatar information to return to client
 SELECT a.avatar_id, a.avatar_name, a.avatar_url
 FROM avatars a
 WHERE a.avatar_id = $1;
+```
+
+**Returns:** Updated avatar object
+```json
+{
+  "avatar_id": 5,
+  "avatar_name": "Avatar 4 Rhino",
+  "avatar_url": "/public/images/avatars/default/avatar4.png"
+}
+```
+
+**Example Usage:**
+
+**cURL:**
+```bash
+# Get all available avatars
+curl http://localhost:8000/avatar/all
+
+# Get user 123's current avatar
+curl http://localhost:8000/123/avatar \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Update user 123's avatar to #5
+curl -X PATCH http://localhost:8000/123/avatar \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"avatar_id": 5}'
+```
+
+**JavaScript:**
+```javascript
+// Get all available avatars
+const avatars = await fetch('http://localhost:8000/avatar/all').then(r => r.json());
+
+// Get user's current avatar
+const currentAvatar = await fetch('http://localhost:8000/123/avatar', {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json());
+
+// Update user's avatar to #5
+const updatedAvatar = await fetch('http://localhost:8000/123/avatar', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ avatar_id: 5 })
+}).then(r => r.json());
 ```
 
 ---

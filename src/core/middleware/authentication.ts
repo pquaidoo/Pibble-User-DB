@@ -96,51 +96,16 @@ async function verifyJWT(token: string): Promise<{ user_id: string; email?: stri
     }
 
     // ============================================================================
-    // TEMPORARY: JWT verification bypassed for development
-    //
-    // TO RE-ENABLE PROPER JWT VERIFICATION:
-    // 1. Get JWT_SECRET from Credentials API team
-    // 2. Add JWT_SECRET=<the-secret> to your .env file
-    // 3. Comment out the TEMP section below (lines 109-126)
-    // 4. Uncomment the PRODUCTION section below (lines 128-157)
+    // JWT VERIFICATION - ENABLED
+    // Using JWT_SECRET from environment configuration
     // ============================================================================
-
-    // TEMP: Decode without verification (INSECURE - DEVELOPMENT ONLY!)
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-            throw new Error('Invalid token format');
-        }
-
-        const payloadBase64 = parts[1];
-        if (!payloadBase64) {
-            throw new Error('Token payload is missing');
-        }
-
-        const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
-        const userId = payload.user_id || payload.userId || payload.id || payload.sub;
-
-        if (!userId) {
-            throw new Error('Token payload missing user identifier');
-        }
-
-        return {
-            user_id: String(userId),
-            email: payload.email,
-            username: payload.username || payload.name
-        };
-    } catch (error: any) {
-        throw new Error('Failed to decode JWT token: ' + error.message);
-    }
-
-    /* PRODUCTION CODE - UNCOMMENT WHEN YOU HAVE JWT_SECRET:
 
     if (!config.JWT_SECRET) {
         throw new Error('JWT_SECRET is not configured');
     }
 
     try {
-        // Verify and decode the JWT token
+        // Verify and decode the JWT token using the secret from .env
         const decoded = jwt.verify(token, config.JWT_SECRET) as any;
 
         // Extract user information from token payload
@@ -166,8 +131,6 @@ async function verifyJWT(token: string): Promise<{ user_id: string; email?: stri
         }
         throw new Error(error.message || 'JWT verification failed');
     }
-
-    */ // END PRODUCTION CODE
 }
 
 /**

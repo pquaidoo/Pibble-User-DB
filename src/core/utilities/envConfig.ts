@@ -136,11 +136,15 @@ const validateConfig = (config: Config): void => {
         }
     });
 
-    // NOTE: JWT_SECRET validation disabled - using temporary token decoding
-    // TODO: Re-enable this when you have JWT_SECRET from Credentials API
-    // if (config.NODE_ENV === 'production' && !config.JWT_SECRET) {
-    //     errors.push('JWT_SECRET is required in production environment');
-    // }
+    // Validate JWT_SECRET is present
+    if (!config.JWT_SECRET) {
+        errors.push('JWT_SECRET is required for JWT token verification');
+    }
+
+    // In production, JWT_SECRET should be strong
+    if (config.NODE_ENV === 'production' && config.JWT_SECRET.length < 32) {
+        errors.push('JWT_SECRET must be at least 32 characters in production environment');
+    }
 
     if (errors.length > 0) {
         console.error('❌ Configuration validation failed:');

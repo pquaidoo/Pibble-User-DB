@@ -277,17 +277,57 @@ paths:
       tags:
         - Avatar
       summary: Get all available avatars
-      description: Retrieves all profile picture options available for users
+      description: |
+        Retrieves all 7 predefined profile picture options available for users to choose from.
+
+        **Avatar System:**
+        - 7 predefined avatars (IDs 1-7)
+        - Avatar #1 (Avatar 0 Smile) is the default
+        - No authentication required
+        - Returns avatars ordered by avatar_id
+
+        **Use Case:**
+        Display these avatars in an avatar picker UI to allow users to select their profile picture.
       operationId: getAllAvatars
+      security: []  # No authentication required
       responses:
         '200':
-          description: Successfully retrieved all avatars
+          description: Successfully retrieved all 7 avatars
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Avatar'
+              example:
+                - avatar_id: 1
+                  avatar_name: Avatar 0 Smile
+                  avatar_url: https://occ-0-3945-2567-1.../avatar0.png
+                  is_default: true
+                - avatar_id: 2
+                  avatar_name: Avatar 1 Bird
+                  avatar_url: https://occ-0-3933-116-1.../avatar1.png
+                  is_default: false
+                - avatar_id: 3
+                  avatar_name: Avatar 2 Girl
+                  avatar_url: https://occ-0-2705-2705-1.../avatar2.png
+                  is_default: false
+                - avatar_id: 4
+                  avatar_name: Avatar 3 Dog
+                  avatar_url: https://occ-0-33-37-1.../avatar3.png
+                  is_default: false
+                - avatar_id: 5
+                  avatar_name: Avatar 4 Rhino
+                  avatar_url: https://occ-0-3945-2567-1.../avatar4.png
+                  is_default: false
+                - avatar_id: 6
+                  avatar_name: Avatar 5 Sheep
+                  avatar_url: https://occ-0-3933-116-1.../avatar5.png
+                  is_default: false
+                - avatar_id: 7
+                  avatar_name: Avatar 6 T-Rex
+                  avatar_url: https://occ-0-3933-116-1.../avatar6.png
+                  is_default: false
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -296,8 +336,23 @@ paths:
       tags:
         - Avatar
       summary: Get user's current avatar
-      description: Retrieves the profile picture assigned to the user
+      description: |
+        Retrieves the profile picture currently assigned to the user.
+
+        **Behavior:**
+        - If user has selected an avatar → returns their selected avatar (IDs 1-7)
+        - If user has NOT selected an avatar → returns default avatar (avatar_id: 1)
+
+        **Authentication:**
+        - Requires valid JWT token
+        - Users can only access their own avatar
+
+        **Use Case:**
+        - Display user's avatar in navigation bar, profile page, etc.
+        - Highlight current selection in avatar picker
       operationId: getUserAvatar
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
       responses:
@@ -307,6 +362,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Avatar'
+              examples:
+                selectedAvatar:
+                  summary: User has selected an avatar
+                  value:
+                    avatar_id: 3
+                    avatar_name: Avatar 2 Girl
+                    avatar_url: https://occ-0-2705-2705-1.../avatar2.png
+                defaultAvatar:
+                  summary: User hasn't selected (gets default)
+                  value:
+                    avatar_id: 1
+                    avatar_name: Avatar 0 Smile
+                    avatar_url: https://occ-0-3945-2567-1.../avatar0.png
+                    is_default: true
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Authentication required
+                code: UNAUTHORIZED
+        '403':
+          description: Forbidden - Accessing another user's avatar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You can only access your own avatar
+                code: FORBIDDEN
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -315,8 +402,30 @@ paths:
       tags:
         - Avatar
       summary: Update user's avatar
-      description: Changes the profile picture assigned to the user
+      description: |
+        Changes the profile picture assigned to the user by selecting from one of the 7 predefined avatars.
+
+        **Valid Avatar IDs:** 1, 2, 3, 4, 5, 6, 7
+
+        **Validation:**
+        - avatar_id must be a number between 1 and 7
+        - avatar_id must exist in the avatars table
+        - Returns 400 error if invalid
+
+        **Rate Limiting:**
+        - STRICT: 10 requests per hour
+        - Prevents abuse of avatar changes
+        - Returns 429 error if exceeded
+
+        **Authentication:**
+        - Requires valid JWT token
+        - Users can only update their own avatar
+
+        **Use Case:**
+        User selects a different avatar from the avatar picker UI.
       operationId: updateUserAvatar
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/UserIdParam'
       requestBody:
@@ -325,6 +434,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AvatarUpdate'
+            examples:
+              updateToAvatar5:
+                summary: Change to Avatar 4 Rhino
+                value:
+                  avatar_id: 5
+              updateToDefault:
+                summary: Change back to default avatar
+                value:
+                  avatar_id: 1
       responses:
         '200':
           description: Avatar successfully updated
@@ -332,10 +450,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Avatar'
+              example:
+                avatar_id: 5
+                avatar_name: Avatar 4 Rhino
+                avatar_url: https://occ-0-3945-2567-1.../avatar4.png
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Bad Request - Invalid avatar_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidId:
+                  summary: Avatar ID out of range
+                  value:
+                    error: Avatar ID must be between 1 and 7
+                    code: VALIDATION_ERROR
+                    timestamp: '2025-11-29T12:00:00.000Z'
+                notANumber:
+                  summary: Avatar ID not a number
+                  value:
+                    error: avatar_id must be a valid number
+                    code: VALIDATION_ERROR
+                    timestamp: '2025-11-29T12:00:00.000Z'
+        '401':
+          description: Unauthorized - Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Authentication required
+                code: UNAUTHORIZED
+        '403':
+          description: Forbidden - Updating another user's avatar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You can only update your own avatar
+                code: FORBIDDEN
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Avatar not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Avatar not found
+                code: NOT_FOUND
+        '429':
+          description: Rate limit exceeded (max 10 per hour)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Too many avatar changes. Please try again later.
+                code: RATE_LIMIT_EXCEEDED
+                timestamp: '2025-11-29T12:00:00.000Z'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -425,32 +599,64 @@ components:
 
     Avatar:
       type: object
+      description: Represents one of the 7 predefined avatar options available for users
       properties:
         avatar_id:
           type: integer
           format: int64
-          description: Unique identifier for the avatar
+          description: |
+            Unique identifier for the avatar.
+            Valid values: 1, 2, 3, 4, 5, 6, 7
+            - Avatar 1 (Avatar 0 Smile) is the default
+          minimum: 1
+          maximum: 7
           example: 1
+        avatar_name:
+          type: string
+          description: |
+            Display name for the avatar.
+            Examples: "Avatar 0 Smile", "Avatar 1 Bird", "Avatar 2 Girl", etc.
+          example: Avatar 0 Smile
         avatar_url:
           type: string
           format: uri
-          description: URL or path to the avatar image
-          example: /avatars/avatar1.png
-        avatar_name:
-          type: string
-          description: Descriptive name for the avatar
-          example: Default Avatar
+          description: |
+            URL or path to the avatar image.
+            Can be an absolute URL or a relative path.
+          example: https://occ-0-3945-2567-1.../avatar0.png
+        is_default:
+          type: boolean
+          description: |
+            Indicates if this is the default avatar.
+            Only avatar_id 1 has this set to true.
+            This field is only returned in GET /avatar/all and when user has no avatar selected.
+          example: true
       required:
         - avatar_id
+        - avatar_name
         - avatar_url
 
     AvatarUpdate:
       type: object
+      description: Request body for updating a user's avatar selection
       properties:
         avatar_id:
           type: integer
           format: int64
-          description: ID of the avatar to assign to the user
+          description: |
+            ID of the avatar to assign to the user.
+            Must be between 1 and 7 (one of the predefined avatars).
+
+            Available avatars:
+            - 1: Avatar 0 Smile (default)
+            - 2: Avatar 1 Bird
+            - 3: Avatar 2 Girl
+            - 4: Avatar 3 Dog
+            - 5: Avatar 4 Rhino
+            - 6: Avatar 5 Sheep
+            - 7: Avatar 6 T-Rex
+          minimum: 1
+          maximum: 7
           example: 3
       required:
         - avatar_id
